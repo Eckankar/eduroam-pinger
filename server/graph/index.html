@@ -1,0 +1,63 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <meta charset="utf-8"/>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+        <script src="highcharts.js"></script>
+        <script src="highcharts-data.js"></script>
+        <script>
+            $.getJSON('http://arduino.coq.dk/eduroam/data', function (data) {
+                var counts = {};
+                $.map(data.pings, function (e) {
+                    counts[Date.parse( e['t_interval'].replace(' ', 'T').replace('+00','Z') )] = 1*e.count;
+                });
+                var now = Date.now();
+                now = now - now % (5 * 60 * 1000);
+                var res = [];
+                for (var i = 1; i < 7 * 24 * 6 * 2; i++) {
+                    var ts = now - i * 5 * 60 * 1000;
+                    res.push([ts , counts[ts] ? counts[ts] : 0]);
+                }
+                var cur = [[now, counts[now] ? counts[now] : 0]];
+
+                // Entries must be sorted
+                res.reverse();
+
+                Highcharts.setOptions({
+                    global: {
+                        useUTC: false
+                    }
+                });
+                $('#graph').highcharts({
+                    chart: {
+                        type: 'spline'
+                    },
+                    title: {
+                        text: 'Antal pings modtaget i 5-min. intervaller'
+                    },
+                    xAxis: {
+                        type: 'datetime'
+                    },
+                    yAxis: {
+                        min: 0,
+                        title: {
+                            text: "Antal pings"
+                        }
+                    },
+                    series: [{
+                        name: "Antal pings modtaget",
+                        data: res
+                    }, {
+                        name: "Nuværende periode",
+                        data: cur
+                    }]
+                });
+            });
+        </script>
+    </head>
+    <body>
+        <div id="graph" style="min-width: 500px; min-height: 400px;">
+            &nbsp;
+        </div>
+    </body>
+</html>
